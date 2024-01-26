@@ -5,10 +5,10 @@ import utils
 id="318917010"
 
 """ Rules """
-RED = 50
-BLUE = 20
-YELLOW = 30
-GREEN = 40
+RED = 20
+BLUE = 30
+YELLOW = 40
+GREEN = 50
 
 '''Constants'''
 PACMAN = 77
@@ -96,38 +96,35 @@ class PacmanProblem(search.Problem):
 
     def get_pacman_actions(self, list_state):
         res = []
-        x, y = self.get_location(PACMAN, list_state)
         for direction in DIRECTION:
-            if self.get_new_location(x, y, direction, list_state) != (-1, -1):
-                x2, y2 = self.get_new_location(x, y, direction, list_state)
-                if list_state[x2][y2] // 10 == 1:  # the new location is a walkable place
-                    new_state = [row[:] for row in list_state]  # copy the list
-                    new_state[x][y] = 10
-                    new_state[x2][y2] = PACMAN
-                    new_state = self.update_ghosts_locations(new_state)
-                    res.append((direction, self.list_to_tuple(new_state)))
-                elif list_state[x2][y2] in GHOSTS:  # the new location is a ghost
-                    new_state = list_state
-                    new_state[x][y] = 10
-                    new_state[x2][y2] = DEAD_PACMAN
-                    new_state = self.update_ghosts_locations(new_state)
-                    res.append((direction, self.list_to_tuple(new_state)))
+            if self.result(list_state, direction) != ():  # the new location is a walkable place
+                res.append((direction, self.result(list_state, direction)))
         return self.list_to_tuple(res)
 
     def successor(self, state):
         """ Generates the successor state """
-        # if the number 88 appears in the state, it means that the pacman was eaten by a ghost, so we return an empty tuple
-        for row in state:
-            for pos in row:
-                if pos == 88:
-                    return ()
+        if self.is_pacman_dead(state):
+            return ()
         list_state = self.tuple_to_list(state)
         return self.get_pacman_actions(list_state)
 
     def result(self, state, move):
         """given state and an action and return a new state"""
-
-        utils.raiseNotDefined()
+        new_state = [row[:] for row in state]  # copy the list
+        x, y = self.get_location(PACMAN, state)
+        if self.get_new_location(x, y, move, state) != (-1, -1):
+            x2, y2 = self.get_new_location(x, y, move, state)
+            if state[x2][y2] // 10 == 1:  # the new location is a walkable place
+                new_state[x][y] = 10
+                new_state[x2][y2] = PACMAN
+                new_state = self.update_ghosts_locations(new_state)
+                return self.list_to_tuple(new_state)
+            elif state[x2][y2] in GHOSTS:  # the new location is a ghost
+                new_state[x][y] = 10
+                new_state[x2][y2] = DEAD_PACMAN
+                new_state = self.update_ghosts_locations(new_state)
+                return self.list_to_tuple(new_state)
+        return ()
 
     def is_success(self, state):
         """ given a state, checks if the player eaten all the tokens, returns True if so"""
@@ -139,16 +136,31 @@ class PacmanProblem(search.Problem):
                     return False
         return True
 
+    def is_pacman_dead(self, state):
+        """ given a state, checks if the pacman is dead, returns True if so"""
+        for row in state:
+            for pos in row:
+                if pos == DEAD_PACMAN:
+                    return True
+        return False
+
     def goal_test(self, state):
         """ given a state, checks if this is the goal state, compares to the created goal state"""
-        if (self.is_success(state)):
+        if (self.is_success(state) and not self.is_pacman_dead(state)):
             return True
         return False
         
     def h(self, node):
         """ This is the heuristic. It get a node (not a state)
         and returns a goal distance estimate"""
-        utils.raiseNotDefined()
+        #  the heuristic is the sum of the pills that are not eaten
+        state = node.state
+        sum = 0
+        for row in state:
+            for pos in row:
+                if pos % 10 == 1:
+                    sum += 1
+        return sum
 
 
 def create_pacman_problem(game):
