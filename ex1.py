@@ -118,11 +118,8 @@ class PacmanProblem(search.Problem):
                 new_state[x][y] = 10
                 new_state[x2][y2] = PACMAN
                 new_state = self.update_ghosts_locations(new_state)
-                return self.list_to_tuple(new_state)
-            elif state[x2][y2] in GHOSTS:  # the new location is a ghost
-                new_state[x][y] = 10
-                new_state[x2][y2] = DEAD_PACMAN
-                new_state = self.update_ghosts_locations(new_state)
+                if self.is_pacman_dead(new_state):  # ghost ate the pacman
+                    return ()
                 return self.list_to_tuple(new_state)
         return ()
 
@@ -146,7 +143,7 @@ class PacmanProblem(search.Problem):
 
     def goal_test(self, state):
         """ given a state, checks if this is the goal state, compares to the created goal state"""
-        if (self.is_success(state) and not self.is_pacman_dead(state)):
+        if (self.is_success(state)):
             return True
         return False
         
